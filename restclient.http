@@ -1,0 +1,2 @@
+POST http://localhost:4004/mail/create_sendtask
+Content-Type: application/json

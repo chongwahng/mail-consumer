@@ -1,0 +1,92 @@
+{
+    "_version": "3.0.0",
+    "identification": {
+        "id": "e949ab99-edb2-494e-ae49-801254d779ce",
+        "entityType": "bundle"
+    },
+    "payload": {
+        "catalogs": [
+            {
+                "_version": "3.0.0",
+                "identification": {
+                    "id": "defaultCatalogId",
+                    "title": "{{title}}",
+                    "entityType": "catalog",
+                    "i18n": "i18n/defaultCatalogId.properties"
+                },
+                "payload": {
+                    "viz": []
+                }
+            }
+        ],
+        "groups": [
+            {
+                "_version": "3.0.0",
+                "identification": {
+                    "id": "defaultGroupId",
+                    "title": "{{title}}",
+                    "entityType": "group",
+                    "i18n": "i18n/defaultGroupId.properties"
+                },
+                "payload": {
+                    "viz": [
+                        {
+                            "id": "cng.com.mailconsumer-0-1629203939976",
+                            "appId": "cng.com.mailconsumer",
+                            "vizId": "MailRequest-Send"
+                        }
+                    ]
+                }
+            }
+        ],
+        "sites": [
+            {
+                "_version": "3.0.0",
+                "identification": {
+                    "id": "bcdb955f-8397-4794-ae20-8a7742f301c3",
+                    "entityType": "site",
+                    "title": "SAP Fiori launchpad site on Cloud Foundry",
+                    "description": "SAP Fiori launchpad site on Cloud Foundry, deployed from WING"
+                },
+                "payload": {
+                    "config": {
+                        "ushellConfig": {
+                            "renderers": {
+                                "fiori2": {
+                                    "componentData": {
+                                        "config": {
+                                            "applications": {
+                                                "Shell-home": {}
+                                            },
+                                            "enableSearch": false,
+                                            "enablePersonalization": true,
+                                            "enableSetTheme": true,
+                                            "enableSetLanguage": true,
+                                            "enableAutomaticSignout": true,
+                                            "sessionTimeoutIntervalInMinutes": 15,
+                                            "sessionTimeoutReminderInMinutes": 3
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "groupsOrder": [
+                        "defaultGroupId"
+                    ],
+                    "sap.cloud.portal": {
+                        "config": {
+                            "theme.id": "sap_fiori_3",
+                            "theme.active": [
+                                "sap_fiori_3",
+                                "sap_fiori_3_dark",
+                                "sap_belize_hcb",
+                                "sap_belize_hcw"
+                            ]
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
