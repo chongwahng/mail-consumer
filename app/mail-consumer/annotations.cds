@@ -1,54 +1,70 @@
 using ConsumerService as service from '../../srv/ConsumerService';
 
+annotate service.Requests with {
+    ID          @UI.Hidden;
+    subject     @title : 'Email Subject';
+    fromSender  @title : 'Sender Email Address';
+    toRecipient @title : 'Recipient Email Address';
+    body        @title : 'Body Text'
+                @UI.MultiLineText;
+};
+
 annotate service.Requests with @(
     UI.LineItem : [
         {
             $Type : 'UI.DataField',
-            Label : 'fromSender',
             Value : fromSender,
         },
         {
             $Type : 'UI.DataField',
-            Label : 'toRecipient',
             Value : toRecipient,
         },
         {
             $Type : 'UI.DataField',
-            Label : 'subject',
             Value : subject,
         },
         {
             $Type : 'UI.DataField',
-            Label : 'body',
             Value : body,
         },
     ] 
 );
 annotate service.Requests with @(
+    UI.HeaderInfo                  : {
+        TypeName       : 'Request',
+        TypeNamePlural : 'Requests',
+        Title          : {Value : subject},
+        ImageUrl       : 'sap-icon://paper-plane',
+    },    
     UI.FieldGroup #GeneratedGroup1 : {
         $Type : 'UI.FieldGroupType',
         Data : [
             {
                 $Type : 'UI.DataField',
-                Label : 'fromSender',
                 Value : fromSender,
             },
             {
                 $Type : 'UI.DataField',
-                Label : 'toRecipient',
                 Value : toRecipient,
             },
             {
                 $Type : 'UI.DataField',
-                Label : 'subject',
                 Value : subject,
             },
             {
                 $Type : 'UI.DataField',
-                Label : 'body',
                 Value : body,
             },
         ],
+    },
+    UI.FieldGroup #Admin           : {
+        $Type : 'UI.FieldGroupType',
+        Data  : [
+            {Value : createdBy},
+            {Value : createdAt},
+            {Value : modifiedBy},
+            {Value : modifiedAt}
+        ]
     },
     UI.Facets : [
         {
@@ -57,5 +73,10 @@ annotate service.Requests with @(
             Label : 'General Information',
             Target : '@UI.FieldGroup#GeneratedGroup1',
         },
+        {
+            $Type  : 'UI.ReferenceFacet',
+            Label  : 'Admin Information',
+            Target : '@UI.FieldGroup#Admin'
+        }
     ]
 );
