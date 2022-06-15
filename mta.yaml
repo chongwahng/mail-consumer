@@ -2,43 +2,88 @@ _schema-version: "3.1"
 ID: mail-consumer
 description: A simple CAP project.
 version: 1.0.0
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx -p @sap/cds-dk cds build --production
+#
+# ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ #
+#    MODULES                                 #
+# ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ #
+#
 modules:
+  #
+  #   ╔═══════════════════════════════════════╗   #
+  #   ║               CAP SERVICE             ║   #
+  #   ╚═══════════════════════════════════════╝   #
+  #
   - name: mail-consumer-srv
     type: nodejs
     path: gen/srv
     requires:
       - name: mail-consumer-uaa
       - name: mail-consumer-destination
-      - name: mail-consumer-db
+      - name: mail-consumer-service-manager
+      - name: mail-consumer-registry
+      - name: mail-consumer-portal-resources
     provides:
       - name: srv-api
         properties:
           srv-url: ${default-url}
+      - name: mtx-api # potentially required by approuter
+        properties:
+          mtx-url: ${default-url}
     parameters:
       buildpack: nodejs_buildpack
     build-parameters:
       builder: npm-ci
+    properties:
+      SUBSCRIPTION_URL: ${protocol}://\${tenant_subdomain}-${default-uri}
+      SUBSCRIPTION_URL_REPLACEMENT_RULES: [ [ '-srv', '' ] ]
+  #
+  #   ╔═══════════════════════════════════════╗   #
+  #   ║               APP ROUTER              ║   #
+  #   ╚═══════════════════════════════════════╝   #
+  #
   - name: mail-consumer-approuter
     type: approuter.nodejs
     path: mail-consumer-approuter
     requires:
-      - name: mail-consumer_html_repo_runtime
+      - name: mail-consumer-html-repo-runtime
       - name: mail-consumer-uaa
       - name: mail-consumer-destination
+      - name: mail-consumer-portal-resources
+      - name: mail-consumer-registry
+      - name: srv-api
         group: destinations
-        properties:
-          forwardAuthToken: false
-          name: ui5
-          url: https://ui5.sap.com
-      - name: portal_resources_mail-consumer
+        properties:          
+          name: cap-service-endpoint
+          Authentication: NoAuthentication
+          Type: HTTP
+          ProxyType: Internet
+          url: ~{srv-url}
+          forwardAuthToken: true
+          timeout: 60000
     parameters:
       disk-quota: 256M
       memory: 256M
-  - name: mail-consumer_ui_deployer
+    properties:
+      TENANT_HOST_PATTERN: "^(.*)-dev-mail-consumer-approuter.${default-domain}"
+  #
+  #   ╔═══════════════════════════════════════╗   #
+  #   ║            HTML5 DEPLOYER             ║   #
+  #   ╚═══════════════════════════════════════╝   #
+  #
+  - name: mail-consumer-ui-deployer
     type: com.sap.application.content
     path: .
     requires:
-      - name: mail-consumer_html_repo_host
+      - name: mail-consumer-html-repo-host
         parameters:
           content-target: true
     build-parameters:
@@ -48,6 +93,11 @@ modules:
             - cngcommailconsumer.zip
           name: cngcommailconsumer
           target-path: resources/
+  #
+  #   ╔═══════════════════════════════════════╗   #
+  #   ║               HTML5 APPS              ║   #
+  #   ╚═══════════════════════════════════════╝   #
+  #
   - name: cngcommailconsumer
     type: html5
     path: app/mail-consumer
@@ -58,29 +108,37 @@ modules:
         - npm install
         - npm run build:cf
       supported-platforms: []
+  #
+  #   ╔═══════════════════════════════════════╗   #
+  #   ║            PORTAL DEPLOYER            ║   #
+  #   ╚═══════════════════════════════════════╝   #
+  #
   - name: mail-consumer-flp
     type: com.sap.application.content
     path: mail-consumer-flp
     requires:
-      - name: portal_resources_mail-consumer
+      - name: mail-consumer-portal-resources
         parameters:
           content-target: true
           service-key:
             config:
               content-endpoint: developer
             name: content-deploy-key
-      - name: mail-consumer_html_repo_host
-      - name: mail-consumer_ui_deployer
+      - name: mail-consumer-html-repo-host
+      - name: mail-consumer-ui-deployer
       - name: mail-consumer-uaa
-
-  - name: mail-consumer-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: mail-consumer-db
+      - name: mail-consumer-registry
+#
+# ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ #
+#     RESOURCES                              #
+# ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ #
+#
 resources:
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │                XSUAA                │   #
+  #   └─────────────────────────────────────┘   #
+  #
   - name: mail-consumer-uaa
     type: org.cloudfoundry.managed-service
     parameters:
@@ -88,10 +146,16 @@ resources:
       service: xsuaa
       service-name: mail-consumer-xsuaa-service
       service-plan: application
+      config:
+        xsappname: mail-consumer-${org}-${space}
+        tenant-mode: shared
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │            DESTINATIONS             │   #
+  #   └─────────────────────────────────────┘   #
+  #
   - name: mail-consumer-destination
     type: org.cloudfoundry.managed-service
-    requires:
-      - name: srv-api
     parameters:
       config:
         HTML5Runtime_enabled: false
@@ -103,47 +167,75 @@ resources:
                 ProxyType: Internet
                 Type: HTTP
                 URL: https://ui5.sap.com
-              - Authentication: NoAuthentication
-                Name: cap-service-endpoint
-                ProxyType: Internet
-                Type: HTTP
-                URL: ~{srv-api/srv-url}
-                HTML5.DynamicDestination: true
-                forwardAuthToken: true
             existing_destinations_policy: update
         version: 1.0.0
       service: destination
       service-name: mail-consumer-destination-service
       service-plan: lite
-  - name: mail-consumer_html_repo_runtime
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │            HTML5 RUNTIME            │   #
+  #   └─────────────────────────────────────┘   #
+  #
+  - name: mail-consumer-html-repo-runtime
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
       service-plan: app-runtime
-  - name: mail-consumer_html_repo_host
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │              HTML5 HOST             │   #
+  #   └─────────────────────────────────────┘   #
+  #      
+  - name: mail-consumer-html-repo-host
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
       service-plan: app-host
-  - name: portal_resources_mail-consumer
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │            PORTAL SERVICE           │   #
+  #   └─────────────────────────────────────┘   #
+  #
+  - name: mail-consumer-portal-resources
     type: org.cloudfoundry.managed-service
     parameters:
-      service: scp-launchpad
+      service: scp-launchpad  # portal service not available in trial account, need to use launchpad
       service-plan: standard
-
-  - name: mail-consumer-db
-    type: com.sap.xs.hdi-container
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │           SERVICE MANAGER           │   #
+  #   └─────────────────────────────────────┘   #
+  #
+  - name: mail-consumer-service-manager
+    type: org.cloudfoundry.managed-service
     parameters:
-      service: hana # or 'hanatrial' on trial landscapes
-      service-plan: hdi-shared
+      service: service-manager
+      service-plan: container
     properties:
       hdi-service-name: ${service-name}
-parameters:
-  deploy_mode: html5-repo
-  enable-parallel-deployments: true
-build-parameters:
-  before-all:
-    - builder: custom
-      commands:
-        - npm ci
-        - npx -p @sap/cds-dk cds build --production
+  #
+  #   ┌─────────────────────────────────────┐   #
+  #   │                SAAS                 │   #
+  #   └─────────────────────────────────────┘   #
+  #
+  - name: mail-consumer-registry
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: mtx-api
+      - name: srv-api
+    parameters:
+      service: saas-registry
+      service-plan: application
+      config:
+        xsappname: mail-consumer-${org}-${space}
+        appName: mail-consumer-${org}-${space}
+        displayName: Mail Consumer
+        description: Mail Consumer App
+        category: 'CAP Multitenant'
+        appUrls:
+          getDependencies: ~{mtx-api/mtx-url}/mtx/v1/provisioning/dependencies
+          onSubscription: ~{mtx-api/mtx-url}/mtx/v1/provisioning/tenant/{tenantId}
+          onSubscriptionAsync: false
+          onUnSubscriptionAsync: false
+          callbackTimeoutMillis: 300000

@@ -1,69 +1,83 @@
 {
-  "name": "mail-consumer",
-  "version": "1.0.0",
-  "description": "A simple CAP project.",
-  "repository": "<Add your repository here>",
-  "license": "UNLICENSED",
-  "private": true,
-  "dependencies": {
-    "@sap/cds": "^5",
-    "@sap/xssec": "^3.2.13",
-    "express": "^4",
-    "passport": "^0.6.0",
-    "hdb": "^0.18.3"
-  },
-  "devDependencies": {
-    "@sap/ux-specification": "^1.100.4",
-    "sqlite3": "^5.0.2"
-  },
-  "scripts": {
-    "start": "cds run",
-    "undeploy": "cf undeploy mail-consumer --delete-services --delete-service-keys"
-  },
-  "eslintConfig": {
-    "extends": "eslint:recommended",
-    "env": {
-      "es2020": true,
-      "node": true,
-      "jest": true,
-      "mocha": true
+    "name": "mail-consumer",
+    "version": "1.0.0",
+    "description": "A simple CAP project.",
+    "repository": "<Add your repository here>",
+    "license": "UNLICENSED",
+    "private": true,
+    "dependencies": {
+        "@sap/cds": "^5",
+        "@sap/xssec": "^3.2.13",
+        "express": "^4",
+        "passport": "^0.6.0",
+        "hdb": "^0.18.3",
+        "@sap/cds-mtx": "^2"
     },
-    "globals": {
-      "SELECT": true,
-      "INSERT": true,
-      "UPDATE": true,
-      "DELETE": true,
-      "CREATE": true,
-      "DROP": true,
-      "CDL": true,
-      "CQL": true,
-      "CXL": true,
-      "cds": true
+    "devDependencies": {
+        "@sap/ux-specification": "^1.100.4",
+        "sqlite3": "^5.0.2"
     },
-    "rules": {
-      "no-console": "off",
-      "require-atomic-updates": "off"
-    }
-  },
-  "cds": {
-    "requires": {
-      "db": {
-        "[development]": {
-          "kind": "sqlite",
-          "credentials": {
-            "database": "mail-consumer.db"
-          }
+    "scripts": {
+        "start": "cds run",
+        "undeploy": "cf undeploy mail-consumer --delete-services --delete-service-keys"
+    },
+    "eslintConfig": {
+        "extends": "eslint:recommended",
+        "env": {
+            "es2020": true,
+            "node": true,
+            "jest": true,
+            "mocha": true
         },
-        "[production]": {
-          "kind": "hana"
+        "globals": {
+            "SELECT": true,
+            "INSERT": true,
+            "UPDATE": true,
+            "DELETE": true,
+            "CREATE": true,
+            "DROP": true,
+            "CDL": true,
+            "CQL": true,
+            "CXL": true,
+            "cds": true
+        },
+        "rules": {
+            "no-console": "off",
+            "require-atomic-updates": "off"
         }
-      }
     },
-    "hana": {
-      "deploy-format": "hdbtable"
-    }
-  },
-  "sapux": [
-    "app/mail-consumer"
-  ]
+    "cds": {
+        "requires": {
+            "db": {
+                "[development]": {
+                    "kind": "sqlite",
+                    "credentials": {
+                        "database": "mail-consumer.db"
+                    }
+                },
+                "kind": "hana",
+                "vcap": {
+                    "label": "service-manager"
+                }
+            },
+            "uaa": {
+                "kind": "xsuaa"
+            },
+            "auth": {
+                "strategy": "JWT"
+            },
+            "multitenancy": true
+        },
+        "hana": {
+            "deploy-format": "hdbtable"
+        },
+        "mtx": {
+            "element-prefix": "Z_",
+            "namespace-blocklist": [],
+            "extension-allowlist": []
+        }
+    },
+    "sapux": [
+        "app/mail-consumer"
+    ]
 }

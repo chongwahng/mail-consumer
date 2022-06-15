@@ -15,9 +15,9 @@
         },
         {
             "source": "^/mail/",
-            "destination": "cap-service-endpoint",
-            "authenticationType": "xsuaa"
-        },
+            "authenticationType": "xsuaa",
+            "destination": "cap-service-endpoint"
+        },        
         {
             "source": "^(.*)$",
             "target": "$1",
