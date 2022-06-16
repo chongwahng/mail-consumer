@@ -72,6 +72,8 @@ modules:
     parameters:
       disk-quota: 256M
       memory: 256M
+      keep-existing:
+        routes: true
     properties:
       TENANT_HOST_PATTERN: "^(.*)-dev-mail-consumer-approuter.${default-domain}"
   #
