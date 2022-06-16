@@ -5,8 +5,6 @@ service ConsumerService @(path : '/mail') {
     @Capabilities.UpdateRestrictions.Updatable  : true
     @Capabilities.DeleteRestrictions.Deletable  : true
     entity Requests as projection on db.Requests;
-
-    action create_sendtask();
 }
 
 annotate ConsumerService.Requests with @odata.draft.enabled;
